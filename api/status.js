@@ -1,5 +1,43 @@
-// Vercel Serverless Function: Scrapes live train status from ConfirmTkt
-const parseTrainStatus = (htmlContent) => {
+const https = require('https');
+
+// Helper to fetch HTML using native https module with 6-second timeout
+function fetchHtml(url) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; SM-G960F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Mobile Safari/537.36'
+      },
+      timeout: 6000
+    };
+
+    const req = https.get(url, options, (res) => {
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        return reject(new Error(`Server returned status code: ${res.statusCode}`));
+      }
+
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+
+      res.on('end', () => {
+        resolve(data);
+      });
+    });
+
+    req.on('error', (err) => {
+      reject(err);
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Request timed out'));
+    });
+  });
+}
+
+// Scraper & Parser Logic
+function parseTrainStatus(htmlContent) {
   const cleanHtml = htmlContent.replace(/\r?\n/g, ' ').replace(/\s+/g, ' ');
 
   const result = {
@@ -99,34 +137,39 @@ const parseTrainStatus = (htmlContent) => {
   }
 
   result.stations.forEach(st => {
-    const codeMatch = st.name.match(/\((.*?)\)/);
-    if (codeMatch) {
-      st.code = codeMatch[1].trim();
-      st.name = st.name.replace(/\(.*?\)/g, '').trim();
-    } else {
-      const popular = {
-        'New Delhi': 'NDLS',
-        'Mathura Jn': 'MTJ',
-        'Agra Cantt': 'AGC',
-        'Dhaulpur': 'DHO',
-        'Morena': 'MRA',
-        'Gwalior': 'GWL',
-        'VGL Jhansi': 'VGLJ',
-        'Lalitpur Jn': 'LAR',
-        'Bina Jn': 'BINA',
-        'Bhopal Jn': 'BPL',
-        'Rani Kamalapati': 'RKMP'
-      };
-      if (popular[st.name]) {
-        st.code = popular[st.name];
+    if (st.name) {
+      const codeMatch = st.name.match(/\((.*?)\)/);
+      if (codeMatch) {
+        st.code = codeMatch[1].trim();
+        st.name = st.name.replace(/\(.*?\)/g, '').trim();
       } else {
-        st.code = st.name.substring(0, 3).toUpperCase();
+        const popular = {
+          'New Delhi': 'NDLS',
+          'Mathura Jn': 'MTJ',
+          'Agra Cantt': 'AGC',
+          'Dhaulpur': 'DHO',
+          'Morena': 'MRA',
+          'Gwalior': 'GWL',
+          'VGL Jhansi': 'VGLJ',
+          'Lalitpur Jn': 'LAR',
+          'Bina Jn': 'BINA',
+          'Bhopal Jn': 'BPL',
+          'Rani Kamalapati': 'RKMP'
+        };
+        if (popular[st.name]) {
+          st.code = popular[st.name];
+        } else {
+          st.code = st.name.substring(0, 3).toUpperCase();
+        }
       }
+    } else {
+      st.name = 'Unknown Station';
+      st.code = 'UNK';
     }
   });
 
   return result;
-};
+}
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -145,17 +188,7 @@ module.exports = async (req, res) => {
 
   try {
     const targetUrl = `https://www.confirmtkt.com/train-running-status/${trainNo}`;
-    const response = await fetch(targetUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 10; SM-G960F) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Mobile Safari/537.36'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`ConfirmTkt returned status ${response.status}`);
-    }
-
-    const html = await response.text();
+    const html = await fetchHtml(targetUrl);
     const trainData = parseTrainStatus(html);
 
     if (!trainData.trainNumber) {
@@ -164,7 +197,7 @@ module.exports = async (req, res) => {
 
     return res.status(200).json(trainData);
   } catch (err) {
-    console.error(err);
+    console.error('Scraper Error:', err);
     return res.status(500).json({ 
       error: 'Failed to fetch running status. Please check the train number and try again.', 
       details: err.message 
