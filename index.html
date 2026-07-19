@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RailPulse - Live Train Status Tracker</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-container" id="btn-home">
+        <i data-lucide="train" class="logo-icon"></i>
+        <span class="logo-text">Rail<span>Pulse</span></span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="btn-theme-toggle" title="Toggle Theme">
+          <i data-lucide="sun" id="theme-icon"></i>
+        </button>
+        <button class="announcement-toggle" id="btn-voice-toggle" title="Toggle Audio Announcements">
+          <i data-lucide="volume-2" id="voice-icon"></i>
+          <span>Voice Alerts</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Landing View -->
+      <section class="landing-section" id="section-landing">
+        <div class="hero-container">
+          <div class="hero-content">
+            <h1>Spot Your Train <br>in <span>Real-Time</span></h1>
+            <p>Track live train locations, schedules, delays, and platform numbers. Get automatic station voice announcements directly in your browser.</p>
+            <div class="stats-mini-grid">
+              <div class="mini-stat-card">
+                <span class="stat-number">99.2%</span>
+                <span class="stat-label">On-Time Accuracy</span>
+              </div>
+              <div class="mini-stat-card">
+                <span class="stat-number">10k+</span>
+                <span class="stat-label">Indian Trains</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="search-glass-card">
+            <!-- Search Type Tabs -->
+            <div class="search-tabs">
+              <button class="tab-btn active" id="tab-stations" onclick="switchSearchTab('stations')">
+                <i data-lucide="map-pin"></i>
+                Between Stations
+              </button>
+              <button class="tab-btn" id="tab-number" onclick="switchSearchTab('number')">
+                <i data-lucide="search"></i>
+                Train Number/Name
+              </button>
+            </div>
+
+            <!-- Tab Content 1: Trains Between Stations -->
+            <div class="tab-content active" id="content-stations">
+              <form id="form-stations" onsubmit="handleStationsSearch(event)">
+                <div class="input-group">
+                  <label for="input-source"><i data-lucide="map-pin"></i> Source Station</label>
+                  <select id="input-source" required>
+                    <option value="" disabled selected>Select starting station</option>
+                    <option value="NDLS">New Delhi (NDLS)</option>
+                    <option value="MMCT">Mumbai Central (MMCT)</option>
+                    <option value="BPL">Bhopal Jn (BPL)</option>
+                    <option value="RKMP">Rani Kamalapati (RKMP)</option>
+                    <option value="AGC">Agra Cantt (AGC)</option>
+                    <option value="GWL">Gwalior (GWL)</option>
+                    <option value="VGLJ">VGL Jhansi (VGLJ)</option>
+                    <option value="MAS">Chennai Central (MAS)</option>
+                    <option value="SBC">KSR Bengaluru (SBC)</option>
+                    <option value="HYB">Hyderabad Deccan (HYB)</option>
+                    <option value="PNVL">Panvel (PNVL)</option>
+                    <option value="HWH">Howrah Jn (HWH)</option>
+                  </select>
+                </div>
+                <div class="swap-divider">
+                  <button type="button" class="swap-btn" onclick="swapStations()" title="Swap Stations">
+                    <i data-lucide="arrow-left-right"></i>
+                  </button>
+                </div>
+                <div class="input-group">
+                  <label for="input-destination"><i data-lucide="navigation"></i> Destination Station</label>
+                  <select id="input-destination" required>
+                    <option value="" disabled selected>Select destination station</option>
+                    <option value="NDLS">New Delhi (NDLS)</option>
+                    <option value="MMCT">Mumbai Central (MMCT)</option>
+                    <option value="BPL">Bhopal Jn (BPL)</option>
+                    <option value="RKMP">Rani Kamalapati (RKMP)</option>
+                    <option value="AGC">Agra Cantt (AGC)</option>
+                    <option value="GWL">Gwalior (GWL)</option>
+                    <option value="VGLJ">VGL Jhansi (VGLJ)</option>
+                    <option value="MAS">Chennai Central (MAS)</option>
+                    <option value="SBC">KSR Bengaluru (SBC)</option>
+                    <option value="HYB">Hyderabad Deccan (HYB)</option>
+                    <option value="PNVL">Panvel (PNVL)</option>
+                    <option value="HWH">Howrah Jn (HWH)</option>
+                  </select>
+                </div>
+                <button type="submit" class="submit-btn">
+                  <span>Search Trains</span>
+                  <i data-lucide="arrow-right"></i>
+                </button>
+              </form>
+            </div>
+
+            <!-- Tab Content 2: Train Number Search -->
+            <div class="tab-content" id="content-number">
+              <form id="form-number" onsubmit="handleNumberSearch(event)">
+                <div class="input-group">
+                  <label for="input-train-no"><i data-lucide="hash"></i> Train Number or Name</label>
+                  <input type="text" id="input-train-no" placeholder="e.g. 12002 or Shatabdi" autocomplete="off" required>
+                  <div class="suggestions-box" id="suggestions-box"></div>
+                </div>
+                <button type="submit" class="submit-btn">
+                  <span>Locate Train</span>
+                  <i data-lucide="navigation-2"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Searches & Popular Trains -->
+        <div class="popular-section">
+          <h3>Popular Trains to Track</h3>
+          <div class="popular-grid">
+            <div class="popular-card" onclick="trackTrainDirect('12002')">
+              <div class="pop-header">
+                <span class="train-badge shatabdi">Shatabdi</span>
+                <span class="train-no">12002</span>
+              </div>
+              <h4>NDLS - RKMP Shatabdi Express</h4>
+              <p>New Delhi ➔ Rani Kamalapati</p>
+            </div>
+            <div class="popular-card" onclick="trackTrainDirect('22436')">
+              <div class="pop-header">
+                <span class="train-badge vande-bharat">Vande Bharat</span>
+                <span class="train-no">22436</span>
+              </div>
+              <h4>NDLS - BSB Vande Bharat Express</h4>
+              <p>New Delhi ➔ Varanasi</p>
+            </div>
+            <div class="popular-card" onclick="trackTrainDirect('12952')">
+              <div class="pop-header">
+                <span class="train-badge rajdhani">Rajdhani</span>
+                <span class="train-no">12952</span>
+              </div>
+              <h4>NDLS - MMCT Mumbai Rajdhani</h4>
+              <p>New Delhi ➔ Mumbai Central</p>
+            </div>
+            <div class="popular-card" onclick="trackTrainDirect('12050')">
+              <div class="pop-header">
+                <span class="train-badge gatimaan">Gatimaan</span>
+                <span class="train-no">12050</span>
+              </div>
+              <h4>NZM - VGLJ Gatimaan Express</h4>
+              <p>H. Nizamuddin ➔ Jhansi</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Results View (Trains Between Stations List) -->
+      <section class="results-section hidden" id="section-results">
+        <div class="results-header">
+          <button class="back-btn" onclick="showLandingView()">
+            <i data-lucide="arrow-left"></i>
+            <span>Back to Search</span>
+          </button>
+          <h2>Trains between <span id="span-source">...</span> and <span id="span-destination">...</span></h2>
+        </div>
+        
+        <div class="trains-list" id="trains-list-container">
+          <!-- Dynamically populated cards -->
+        </div>
+      </section>
+
+      <!-- Tracker Dashboard View -->
+      <section class="dashboard-section hidden" id="section-tracker">
+        <!-- Sidebar Navigation (Back Button, Station Timeline) -->
+        <div class="dashboard-sidebar">
+          <div class="sidebar-header">
+            <button class="back-btn" id="btn-back-to-search" onclick="goBackFromTracker()">
+              <i data-lucide="arrow-left"></i>
+              <span>Back</span>
+            </button>
+            <div class="active-train-title">
+              <h2 id="track-train-name">Loading Train...</h2>
+              <span id="track-train-no" class="train-number-pill">#-----</span>
+            </div>
+          </div>
+
+          <!-- Quick Statistics Header inside Sidebar -->
+          <div class="quick-status-cards">
+            <div class="q-card delay-status" id="dashboard-delay-status">
+              <div class="q-icon-wrap"><i data-lucide="clock"></i></div>
+              <div class="q-info">
+                <span class="q-label">Running Status</span>
+                <span class="q-value" id="tracker-delay-val">Checking...</span>
+              </div>
+            </div>
+            <div class="q-card speed-card">
+              <div class="q-icon-wrap"><i data-lucide="gauge"></i></div>
+              <div class="q-info">
+                <span class="q-label">Current Speed</span>
+                <span class="q-value" id="tracker-speed-val">0 km/h</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vertical Timeline -->
+          <div class="route-timeline-container">
+            <h3>Route Timeline</h3>
+            <div class="timeline" id="route-timeline">
+              <!-- Dynamically populated stations -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Tracking Visualization (Map, Details) -->
+        <div class="dashboard-main">
+          <!-- Top Row Status Card -->
+          <div class="live-status-hero-card">
+            <div class="pulse-indicator">
+              <span class="pulse-ring"></span>
+              <span class="pulse-dot"></span>
+              <span class="pulse-text">LIVE STATUS</span>
+            </div>
+            <h3 id="hero-current-status">Initialising live position...</h3>
+            <p id="hero-last-updated">Last Updated: Just now</p>
+          </div>
+
+          <!-- Interactive Graphic/Map Panel -->
+          <div class="tracking-map-panel">
+            <div class="map-card-header">
+              <h3>Live Route Mapping</h3>
+              <div class="map-legend">
+                <span class="legend-item"><span class="dot passed"></span> Passed</span>
+                <span class="legend-item"><span class="dot current"></span> Current</span>
+                <span class="legend-item"><span class="dot upcoming"></span> Upcoming</span>
+              </div>
+            </div>
+            <div class="map-container" id="live-map-container">
+              <!-- SVG Map will be dynamically loaded here -->
+            </div>
+          </div>
+
+          <!-- Statistics Panel -->
+          <div class="train-details-panel">
+            <div class="detail-card">
+              <i data-lucide="map-pin"></i>
+              <div class="detail-info">
+                <span class="d-label">Next Halt</span>
+                <span class="d-value" id="lbl-next-halt">-</span>
+              </div>
+            </div>
+            <div class="detail-card">
+              <i data-lucide="milestone"></i>
+              <div class="detail-info">
+                <span class="d-label">Distance Covered</span>
+                <span class="d-value" id="lbl-distance-covered">0 / 0 km</span>
+              </div>
+            </div>
+            <div class="detail-card">
+              <i data-lucide="sparkles"></i>
+              <div class="detail-info">
+                <span class="d-label">Next Platform</span>
+                <span class="d-value" id="lbl-next-platform">PF -</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>&copy; 2026 RailPulse. Made with passion for travelers. Data fetched in real-time.</p>
+    </footer>
+  </div>
+
+  <!-- Audio elements or notification audio -->
+  <audio id="audio-chime" src="https://assets.mixkit.co/active_storage/sfx/2568/2568-84.wav" preload="auto"></audio>
+
+  <!-- Script logic -->
+  <script src="app.js"></script>
+</body>
+</html>
