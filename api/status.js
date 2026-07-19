@@ -172,18 +172,35 @@ function parseTrainStatus(htmlContent) {
 }
 
 module.exports = async (req, res) => {
+  // Use native Node.js HTTP methods for absolute compatibility
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
-    return res.status(200).end();
+    res.statusCode = 200;
+    res.end();
+    return;
   }
 
-  const { trainNo } = req.query;
+  // Parse trainNo query parameter manually to prevent errors if req.query is undefined
+  let trainNo = '';
+  if (req.query && req.query.trainNo) {
+    trainNo = req.query.trainNo;
+  } else {
+    // Fallback manual query string parsing
+    const urlParts = req.url.split('?');
+    if (urlParts.length > 1) {
+      const params = new URLSearchParams(urlParts[1]);
+      trainNo = params.get('trainNo') || '';
+    }
+  }
 
   if (!trainNo || !/^\d{5}$/.test(trainNo)) {
-    return res.status(400).json({ error: 'Invalid train number. Must be a 5-digit number.' });
+    res.statusCode = 400;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ error: 'Invalid train number. Must be a 5-digit number.' }));
+    return;
   }
 
   try {
@@ -195,12 +212,16 @@ module.exports = async (req, res) => {
       trainData.trainNumber = trainNo;
     }
 
-    return res.status(200).json(trainData);
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(trainData));
   } catch (err) {
     console.error('Scraper Error:', err);
-    return res.status(500).json({ 
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ 
       error: 'Failed to fetch running status. Please check the train number and try again.', 
       details: err.message 
-    });
+    }));
   }
 };
